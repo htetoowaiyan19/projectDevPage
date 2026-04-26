@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /members/{memberId} {
+      allow read: if true;
+      allow update: if true;
+      allow create, delete: if false;
+    }
+
+    match /projects/{projectId} {
+      allow read, write: if true;
+    }
+  }
+}
