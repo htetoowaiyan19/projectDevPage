@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { CenterDialog } from '../components/CenterDialog'
 import { castVote } from '../services/projects'
 import { useProjects } from '../hooks/useProjects'
 
@@ -8,6 +9,7 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
   const { projects, isLoading, error } = useProjects()
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [voteDialog, setVoteDialog] = useState(null)
 
   const project = useMemo(
     () => projects.find((entry) => entry.id === projectId) ?? null,
@@ -18,7 +20,7 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
     return <Navigate to="/voting" replace />
   }
 
-  async function handleVote() {
+  async function submitVote() {
     if (!project || currentUser.hasVoted || isSubmitting) {
       return
     }
@@ -43,6 +45,19 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  function handleVote() {
+    if (!project || currentUser.hasVoted || isSubmitting) {
+      return
+    }
+
+    if (currentUser.submittedProjectId && currentUser.submittedProjectId === project.id) {
+      setVoteDialog({ type: 'own-project' })
+      return
+    }
+
+    setVoteDialog({ type: 'confirm-vote' })
   }
 
   return (
@@ -98,6 +113,30 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
           </article>
         </div>
       ) : null}
+      <CenterDialog
+        open={Boolean(voteDialog)}
+        title={
+          voteDialog?.type === 'own-project' ? 'Cannot vote this project' : 'Confirm vote'
+        }
+        message={
+          voteDialog?.type === 'own-project'
+            ? "You can't vote for your own project :P"
+            : "Are you sure? Once you've confirmed, the vote cannot be changed."
+        }
+        showCancel={voteDialog?.type === 'confirm-vote'}
+        confirmLabel="OK"
+        cancelLabel="Cancel"
+        onClose={() => setVoteDialog(null)}
+        onConfirm={async () => {
+          if (voteDialog?.type === 'confirm-vote') {
+            setVoteDialog(null)
+            await submitVote()
+            return
+          }
+
+          setVoteDialog(null)
+        }}
+      />
     </section>
   )
 }

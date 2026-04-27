@@ -18,11 +18,18 @@ function mapProjectSnapshot(projectDoc) {
 
   return {
     id: projectDoc.id,
+    name: data.Name ?? '',
+    phone: data.Phone ?? '',
+    email: data.Email ?? '',
+    telegram: data.Telegram ?? '',
+    discord: data.Discord ?? '',
+    github: data.GitHub ?? '',
     title: data.ProjectTitle ?? '',
     projectType: data.ProjectType ?? 'Software',
     requirements: data.Requirements ?? '',
     description: data.Description ?? '',
     solution: data.Solution ?? '',
+    agreedToTerms: data.AgreedToTerms ?? false,
     pointMultiplier: Number(data.PointMultiplier ?? 1),
     voteScore: Number(data.VoteScore ?? 0),
     voteCount: Number(data.VoteCount ?? 0),
@@ -31,11 +38,18 @@ function mapProjectSnapshot(projectDoc) {
 
 function normalizeProjectInput(project) {
   return {
+    Name: project.name?.trim() || '',
+    Phone: project.phone?.trim() || '',
+    Email: project.email?.trim() || '',
+    Telegram: project.telegram?.trim() || '',
+    Discord: project.discord?.trim() || '',
+    GitHub: project.github?.trim() || '',
     ProjectTitle: project.title.trim(),
     ProjectType: project.projectType,
     Requirements: project.requirements.trim(),
     Description: project.description.trim(),
     Solution: project.solution.trim(),
+    AgreedToTerms: Boolean(project.agreedToTerms),
     PointMultiplier: Number(project.pointMultiplier) || 1,
   }
 }
@@ -142,9 +156,14 @@ export async function castVote({ memberId, projectId }) {
 
     const memberData = memberSnapshot.data()
     const projectData = projectSnapshot.data()
+    const submittedProjectId = String(memberData.SubmittedProjectId ?? '').trim()
 
     if (memberData.HasVoted) {
       throw new Error('You have already voted.')
+    }
+
+    if (submittedProjectId && submittedProjectId === projectId) {
+      throw new Error('You cannot vote for your own project.')
     }
 
     const votePoint = Number(memberData.VotePoint ?? 1)

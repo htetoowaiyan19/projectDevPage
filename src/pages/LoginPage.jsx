@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Footer } from '../components/Footer'
 import { LoginStatus } from '../components/LoginStatus'
 import { RollNumberField } from '../components/RollNumberField'
 import { fetchStudentByRollNumber } from '../services/studentAuth'
@@ -202,6 +203,8 @@ export function LoginPage({ onLogin }) {
           </aside>
         </div>
       </section>
+
+      <Footer />
     </div>
   )
 }

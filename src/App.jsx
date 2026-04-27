@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { PhaseHero } from './components/PhaseHero'
 import { PhaseTimeline } from './components/PhaseTimeline'
+import { Footer } from './components/Footer'
 import { phases } from './data/phases'
 import { useFirebaseClock } from './hooks/useFirebaseClock'
 import { LoginPage } from './pages/LoginPage'
@@ -36,85 +37,88 @@ function AppShell({ currentUser, currentPhase, phaseCountdownLabel, onUserUpdate
   }
 
   return (
-    <div className="app-shell">
-      <div className="app-noise" aria-hidden="true" />
-      <div className="app-grid" aria-hidden="true" />
-      <header className="app-header">
-        <PhaseHero
-          activePhase={currentPhase}
-          currentUser={currentUser}
-          phaseCountdownLabel={phaseCountdownLabel}
-          onLogout={onLogout}
-        />
-        <PhaseTimeline
-          phases={phases}
-          currentPhaseId={currentPhase.id}
-          canAccessPhase={canAccessPhase}
-        />
-      </header>
+    <div>
+      <div className="app-shell">
+        <div className="app-noise" aria-hidden="true" />
+        <div className="app-grid" aria-hidden="true" />
+        <header className="app-header">
+          <PhaseHero
+            activePhase={currentPhase}
+            currentUser={currentUser}
+            phaseCountdownLabel={phaseCountdownLabel}
+            onLogout={onLogout}
+          />
+          <PhaseTimeline
+            phases={phases}
+            currentPhaseId={currentPhase.id}
+            canAccessPhase={canAccessPhase}
+          />
+        </header>
 
-      <main className="app-main">
-        <Routes>
-          <Route
-            path="/preparation"
-            element={
-              <PreparationPhase currentUser={currentUser} onUserUpdate={onUserUpdate} />
-            }
-          />
-          <Route
-            path="/voting"
-            element={
-              <VotingPhase currentUser={currentUser} onUserUpdate={onUserUpdate} />
-            }
-          />
-          <Route
-            path="/projects/:projectId"
-            element={
-              <ProjectDetailPage
-                currentUser={currentUser}
-                onUserUpdate={onUserUpdate}
-              />
-            }
-          />
-          <Route
-            path="/setup"
-            element={
-              <MaintenancePhase
-                phaseId="setup"
-                title="Setup Phase"
-                intro="This space is reserved for setup steps, team alignment, and environment preparation after voting concludes."
-                meta="Setup lane: under maintenance"
-              />
-            }
-          />
-          <Route
-            path="/building"
-            element={<BuildingPhase />}
-          />
-          <Route
-            path="/checkup"
-            element={
-              <MaintenancePhase
-                phaseId="checkup"
-                title="Checkup Phase"
-                intro="This space is reserved for later validation, review, and closing checks once the build period is complete."
-                meta="Checkup lane: under maintenance"
-              />
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              currentUser?.canManageProjects ? (
-                <AdminPanelPage />
-              ) : (
-                <Navigate to={defaultPhasePath} replace />
-              )
-            }
-          />
-          <Route path="*" element={<Navigate to={defaultPhasePath} replace />} />
-        </Routes>
-      </main>
+        <main className="app-main">
+          <Routes>
+            <Route
+              path="/preparation"
+              element={
+                <PreparationPhase currentUser={currentUser} onUserUpdate={onUserUpdate} />
+              }
+            />
+            <Route
+              path="/voting"
+              element={
+                <VotingPhase currentUser={currentUser} onUserUpdate={onUserUpdate} />
+              }
+            />
+            <Route
+              path="/projects/:projectId"
+              element={
+                <ProjectDetailPage
+                  currentUser={currentUser}
+                  onUserUpdate={onUserUpdate}
+                />
+              }
+            />
+            <Route
+              path="/setup"
+              element={
+                <MaintenancePhase
+                  phaseId="setup"
+                  title="Setup Phase"
+                  intro="This space is reserved for setup steps, team alignment, and environment preparation after voting concludes."
+                  meta="Setup lane: under maintenance"
+                />
+              }
+            />
+            <Route
+              path="/building"
+              element={<BuildingPhase />}
+            />
+            <Route
+              path="/checkup"
+              element={
+                <MaintenancePhase
+                  phaseId="checkup"
+                  title="Checkup Phase"
+                  intro="This space is reserved for later validation, review, and closing checks once the build period is complete."
+                  meta="Checkup lane: under maintenance"
+                />
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                currentUser?.canManageProjects ? (
+                  <AdminPanelPage />
+                ) : (
+                  <Navigate to={defaultPhasePath} replace />
+                )
+              }
+            />
+            <Route path="*" element={<Navigate to={defaultPhasePath} replace />} />
+          </Routes>
+        </main>
+      </div>
+      <Footer />
     </div>
   )
 }

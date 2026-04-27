@@ -18,6 +18,8 @@
 .login-shell,
 .app-shell {
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   overflow: hidden;
   padding: 32px 20px 48px;
@@ -61,6 +63,7 @@
 .app-main {
   position: relative;
   z-index: 1;
+  flex: 1;
   width: min(1200px, 100%);
   margin: 0 auto;
 }
@@ -824,6 +827,53 @@
 .phase-feedback--error {
   border-left-color: #ff5f6f;
   color: #ffb6be;
+}
+.center-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(2px);
+}
+.center-dialog {
+  width: min(520px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(12, 16, 25, 0.98);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.center-dialog__title {
+  margin: 0;
+  text-transform: uppercase;
+}
+.center-dialog__message {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.center-dialog__actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.center-dialog__button {
+  border: 0;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #07090d;
+  background: var(--lime);
+  cursor: pointer;
+}
+.center-dialog__button--ghost {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 .placeholder-block {
   margin-top: 28px;

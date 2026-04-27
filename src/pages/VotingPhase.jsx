@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { CenterDialog } from '../components/CenterDialog'
 import { PhasePanel } from '../components/PhasePanel'
 import { VoteCard } from '../components/VoteCard'
 import { useProjects } from '../hooks/useProjects'
@@ -9,6 +10,7 @@ export function VotingPhase({ currentUser, onUserUpdate }) {
   const { projects, isLoading, error } = useProjects()
   const [voteMessage, setVoteMessage] = useState('')
   const [isSubmittingVote, setIsSubmittingVote] = useState(false)
+  const [voteDialog, setVoteDialog] = useState(null)
 
   const leadingProject = useMemo(
     () =>
@@ -18,7 +20,7 @@ export function VotingPhase({ currentUser, onUserUpdate }) {
     [projects],
   )
 
-  async function handleVote(projectId) {
+  async function submitVote(projectId) {
     if (!currentUser || currentUser.hasVoted || isSubmittingVote) {
       return
     }
@@ -43,6 +45,19 @@ export function VotingPhase({ currentUser, onUserUpdate }) {
     } finally {
       setIsSubmittingVote(false)
     }
+  }
+
+  function handleVote(projectId) {
+    if (!currentUser || currentUser.hasVoted || isSubmittingVote) {
+      return
+    }
+
+    if (currentUser.submittedProjectId && currentUser.submittedProjectId === projectId) {
+      setVoteDialog({ type: 'own-project' })
+      return
+    }
+
+    setVoteDialog({ type: 'confirm-vote', projectId })
   }
 
   return (
@@ -85,18 +100,45 @@ export function VotingPhase({ currentUser, onUserUpdate }) {
 
       {!isLoading && projects.length ? (
         <div className="vote-grid">
-          {projects.map((project) => (
-            <VoteCard
-              key={project.id}
-              {...project}
-              showScores={currentUser.canManageProjects}
-              canVote={!currentUser.hasVoted && !isSubmittingVote}
-              hasVoted={currentUser.hasVoted}
-              onVote={handleVote}
-            />
-          ))}
+          {projects.map((project) => {
+            return (
+              <VoteCard
+                key={project.id}
+                {...project}
+                showScores={currentUser.canManageProjects}
+                canVote={!currentUser.hasVoted && !isSubmittingVote}
+                hasVoted={currentUser.hasVoted}
+                onVote={handleVote}
+              />
+            )
+          })}
         </div>
       ) : null}
+      <CenterDialog
+        open={Boolean(voteDialog)}
+        title={
+          voteDialog?.type === 'own-project' ? 'Cannot vote this project' : 'Confirm vote'
+        }
+        message={
+          voteDialog?.type === 'own-project'
+            ? "You can't vote for your own project :P"
+            : "Are you sure? Once you've confirmed, the vote cannot be changed."
+        }
+        showCancel={voteDialog?.type === 'confirm-vote'}
+        confirmLabel="OK"
+        cancelLabel="Cancel"
+        onClose={() => setVoteDialog(null)}
+        onConfirm={async () => {
+          if (voteDialog?.type === 'confirm-vote' && voteDialog.projectId) {
+            const projectId = voteDialog.projectId
+            setVoteDialog(null)
+            await submitVote(projectId)
+            return
+          }
+
+          setVoteDialog(null)
+        }}
+      />
     </PhasePanel>
   )
 }

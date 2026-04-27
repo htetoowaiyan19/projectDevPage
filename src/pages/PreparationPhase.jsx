@@ -28,7 +28,7 @@ export function PreparationPhase({ currentUser, onUserUpdate }) {
     setFeedback('')
 
     try {
-      await submitMemberProject({
+      const result = await submitMemberProject({
         memberId: currentUser.id,
         project: form,
       })
@@ -36,6 +36,7 @@ export function PreparationPhase({ currentUser, onUserUpdate }) {
       onUserUpdate((previousUser) => ({
         ...previousUser,
         hasProject: true,
+        submittedProjectId: result.projectId,
       }))
       setForm(getEmptyProjectForm())
       setFeedback('Project submitted for voting. You cannot submit another project in this phase.')

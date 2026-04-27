@@ -1,0 +1,122 @@
+.member-form {
+  display: grid;
+  gap: 18px;
+}
+
+.member-form__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.member-form__field {
+  display: grid;
+  gap: 8px;
+}
+
+.member-form__field span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+}
+
+.member-form__field small {
+  color: var(--muted);
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: -4px;
+}
+
+.member-form__field input,
+.member-form__field select,
+.member-form__field textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  background: rgba(5, 7, 12, 0.8);
+}
+
+.member-form__field textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.member-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.member-form__terms {
+  display: flex;
+  justify-content: center;
+}
+
+.member-form__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.member-form__checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.member-form__checkbox span a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+.member-form__checkbox span a:hover {
+  text-decoration: underline;
+}
+
+.member-form__ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+  cursor: pointer;
+}
+
+.member-form__ghost:hover,
+.member-form__ghost:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.08);
+  outline: none;
+}
+
+.member-form__ghost--danger:hover,
+.member-form__ghost--danger:focus-visible {
+  border-color: rgba(255, 95, 111, 0.45);
+  background: rgba(255, 95, 111, 0.08);
+}
+
+@media (max-width: 920px) {
+  .member-form__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .member-form__actions {
+    flex-direction: column;
+  }
+}
