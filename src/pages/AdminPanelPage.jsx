@@ -12,6 +12,9 @@ export function AdminPanelPage() {
   const [feedback, setFeedback] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Fields that should not be updated when editing existing projects
+  const PROTECTED_FIELDS = ['name', 'phone', 'email', 'telegram', 'discord', 'github', 'agreedToTerms']
+
   const leaderboard = useMemo(
     () =>
       [...projects].sort(
@@ -45,7 +48,15 @@ export function AdminPanelPage() {
 
     try {
       if (editingProjectId) {
-        await updateProject(editingProjectId, form)
+        // Preserve protected fields when editing
+        const existingProject = projects.find((p) => p.id === editingProjectId)
+        const protectedData = {}
+        PROTECTED_FIELDS.forEach((field) => {
+          if (existingProject && existingProject[field] !== undefined) {
+            protectedData[field] = existingProject[field]
+          }
+        })
+        await updateProject(editingProjectId, { ...form, ...protectedData })
         setFeedback('Project updated.')
       } else {
         await createProject(form)

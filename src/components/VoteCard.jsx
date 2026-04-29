@@ -1,5 +1,12 @@
 import { Link } from 'react-router-dom'
 
+const DESCRIPTION_LIMIT = 100
+
+function truncateText(text, maxLength) {
+  if (!text || text.length <= maxLength) return text
+  return text.slice(0, maxLength).trim() + '...'
+}
+
 export function VoteCard({
   id,
   title,
@@ -25,7 +32,7 @@ export function VoteCard({
 
       <div className="vote-card__body">
         <h3>{title}</h3>
-        <p>{description}</p>
+        <p>{truncateText(description, DESCRIPTION_LIMIT)}</p>
       </div>
 
       <dl className="vote-card__details">
