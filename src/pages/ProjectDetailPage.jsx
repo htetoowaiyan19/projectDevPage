@@ -1,15 +1,19 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useSearchParams, useParams } from 'react-router-dom'
 import { CenterDialog } from '../components/CenterDialog'
 import { castVote } from '../services/projects'
 import { useProjects } from '../hooks/useProjects'
 
 export function ProjectDetailPage({ currentUser, onUserUpdate }) {
   const { projectId } = useParams()
+  const [searchParams] = useSearchParams()
   const { projects, isLoading, error } = useProjects()
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [voteDialog, setVoteDialog] = useState(null)
+  const pageContext = searchParams.get('context')
+  const isSetupPreview = pageContext === 'setup'
+  const backPath = isSetupPreview ? '/setup' : '/voting'
 
   const project = useMemo(
     () => projects.find((entry) => entry.id === projectId) ?? null,
@@ -17,7 +21,7 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
   )
 
   if (!isLoading && !project && !error) {
-    return <Navigate to="/voting" replace />
+    return <Navigate to={backPath} replace />
   }
 
   async function submitVote() {
@@ -67,8 +71,8 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
           <p className="eyebrow">Project Detail</p>
           <h2>{project?.title ?? 'Loading project...'}</h2>
         </div>
-        <Link to="/voting" className="phase-toolbar__admin-link">
-          Back to voting
+        <Link to={backPath} className="phase-toolbar__admin-link">
+          {isSetupPreview ? 'Back to setup' : 'Back to voting'}
         </Link>
       </div>
 
@@ -94,22 +98,21 @@ export function ProjectDetailPage({ currentUser, onUserUpdate }) {
           </article>
 
           <article className="project-detail__card">
-            <h4>Voting maths</h4>
+            <h4>{isSetupPreview ? 'Voting summary' : 'Voting maths'}</h4>
             <p>Point multiplier: {project.pointMultiplier.toFixed(2)}</p>
-            {currentUser.canManageProjects ? (
-              <>
-                <p>Total score: {project.voteScore.toFixed(2)}</p>
-                <p>Total voters: {project.voteCount}</p>
-              </>
+            {isSetupPreview || currentUser.canManageProjects ? (
+              <p>Total points: {project.voteScore.toFixed(2)}</p>
             ) : null}
-            <button
-              type="button"
-              className="vote-card__button"
-              onClick={handleVote}
-              disabled={currentUser.hasVoted || isSubmitting}
-            >
-              {currentUser.hasVoted ? 'Vote locked' : 'Vote for this project'}
-            </button>
+            {!isSetupPreview ? (
+              <button
+                type="button"
+                className="vote-card__button"
+                onClick={handleVote}
+                disabled={currentUser.hasVoted || isSubmitting}
+              >
+                {currentUser.hasVoted ? 'Vote locked' : 'Vote for this project'}
+              </button>
+            ) : null}
           </article>
         </div>
       ) : null}

@@ -12,6 +12,7 @@ import { BuildingPhase } from './pages/BuildingPhase'
 import { MaintenancePhase } from './pages/MaintenancePhase'
 import { PreparationPhase } from './pages/PreparationPhase'
 import { ProjectDetailPage } from './pages/ProjectDetailPage'
+import { SetupPhase } from './pages/SetupPhase'
 import { VotingPhase } from './pages/VotingPhase'
 import { formatPhaseCountdown, getCurrentPhaseByTime, getDefaultPhasePath, getPhaseEndMs } from './utils/phaseSchedule'
 
@@ -25,9 +26,12 @@ function AppShell({ currentUser, currentPhase, phaseCountdownLabel, onUserUpdate
   const isAdmin = Boolean(currentUser?.canManageProjects)
   const canAccessPhase = (phase) => isAdmin || phase.id === currentPhase.id
   const isOnProjectDetail = location.pathname.startsWith('/projects/')
+  const projectDetailContext = new URLSearchParams(location.search).get('context')
+  const canAccessProjectDetail =
+    currentPhase.id === 'voting' || (currentPhase.id === 'setup' && projectDetailContext === 'setup')
 
   if (!isAdmin) {
-    if (isOnProjectDetail && currentPhase.id !== 'voting') {
+    if (isOnProjectDetail && !canAccessProjectDetail) {
       return <Navigate to={defaultPhasePath} replace />
     }
 
@@ -81,12 +85,7 @@ function AppShell({ currentUser, currentPhase, phaseCountdownLabel, onUserUpdate
             <Route
               path="/setup"
               element={
-                <MaintenancePhase
-                  phaseId="setup"
-                  title="Setup Phase"
-                  intro="This space is reserved for setup steps, team alignment, and environment preparation after voting concludes."
-                  meta="Setup lane: under maintenance"
-                />
+                <SetupPhase currentUser={currentUser} onUserUpdate={onUserUpdate} />
               }
             />
             <Route
