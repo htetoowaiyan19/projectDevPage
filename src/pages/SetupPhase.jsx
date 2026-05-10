@@ -1,13 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CenterDialog } from '../components/CenterDialog'
 import { PhasePanel } from '../components/PhasePanel'
-import { useFirebaseClock } from '../hooks/useFirebaseClock'
 import { useMembers } from '../hooks/useMembers'
 import { useProjects } from '../hooks/useProjects'
-import { castManagerVote, claimRole, finalizeManagerVoteIfNeeded } from '../services/members'
-import { formatPhaseCountdown } from '../utils/phaseSchedule'
-import { getManagerVoteDeadlineMs } from '../utils/setupPhase'
+import { claimRole } from '../services/members'
 
 const PROJECT_PLACEMENTS = [
   { sourceIndex: 2, label: '3rd Place', toneClassName: 'setup-podium__card--bronze setup-podium__card--left' },
@@ -18,13 +15,9 @@ const PROJECT_PLACEMENTS = [
 export function SetupPhase({ currentUser, onUserUpdate }) {
   const { projects, isLoading: isLoadingProjects, error: projectsError } = useProjects()
   const { members, setupMeta, isLoading: isLoadingMembers, error: membersError } = useMembers()
-  const { now } = useFirebaseClock()
-  const [managerFeedback, setManagerFeedback] = useState('')
   const [roleFeedback, setRoleFeedback] = useState('')
-  const [isSubmittingManagerVote, setIsSubmittingManagerVote] = useState(false)
   const [isSubmittingRole, setIsSubmittingRole] = useState(false)
   const [dialog, setDialog] = useState(null)
-  const hasTriedFinalizingRef = useRef(false)
 
   const topProjects = useMemo(
     () =>
@@ -49,118 +42,6 @@ export function SetupPhase({ currentUser, onUserUpdate }) {
       }).filter(Boolean),
     [topProjects],
   )
-  const managerCandidates = useMemo(
-    () => members.filter((member) => !member.isLeader),
-    [members],
-  )
-  const managerWinner = useMemo(
-    () =>
-      members.find((member) => member.isManager || member.id === setupMeta.managerWinnerId) ?? null,
-    [members, setupMeta.managerWinnerId],
-  )
-  const liveManagerLeader = useMemo(() => {
-    if (!managerCandidates.length) {
-      return null
-    }
-
-    return [...managerCandidates].sort((left, right) => {
-      const voteGap = right.managerVoteCount - left.managerVoteCount
-
-      if (voteGap !== 0) {
-        return voteGap
-      }
-
-      return left.name.localeCompare(right.name)
-    })[0]
-  }, [managerCandidates])
-
-  const managerVoteDeadlineMs = getManagerVoteDeadlineMs()
-  const isManagerVoteClosed = now ? now.getTime() >= managerVoteDeadlineMs : false
-  const managerVoteStatus = now
-    ? isManagerVoteClosed
-      ? 'Fund manager vote closed on 13 May 2026'
-      : `Fund manager vote ends in ${formatPhaseCountdown(managerVoteDeadlineMs - now.getTime())}`
-    : 'Syncing fund manager deadline...'
-
-  useEffect(() => {
-    if (
-      !now ||
-      isLoadingMembers ||
-      isLoadingProjects ||
-      hasTriedFinalizingRef.current ||
-      !isManagerVoteClosed
-    ) {
-      return
-    }
-
-    if (setupMeta.isManagerVoteFinalized || managerWinner) {
-      hasTriedFinalizingRef.current = true
-      return
-    }
-
-    let isMounted = true
-
-    async function finalizeVote() {
-      try {
-        await finalizeManagerVoteIfNeeded()
-      } catch (error) {
-        if (isMounted) {
-          setManagerFeedback(
-            error instanceof Error
-              ? error.message
-              : 'Unable to finalize the fund manager vote.',
-          )
-        }
-      } finally {
-        if (isMounted) {
-          hasTriedFinalizingRef.current = true
-        }
-      }
-    }
-
-    finalizeVote()
-
-    return () => {
-      isMounted = false
-    }
-  }, [
-    isLoadingMembers,
-    isLoadingProjects,
-    isManagerVoteClosed,
-    managerWinner,
-    now,
-    setupMeta.isManagerVoteFinalized,
-  ])
-
-  async function submitManagerVote(candidateId) {
-    if (!currentUser || currentUser.hasManagerVoted || isSubmittingManagerVote) {
-      return
-    }
-
-    setIsSubmittingManagerVote(true)
-    setManagerFeedback('')
-
-    try {
-      const result = await castManagerVote({
-        memberId: currentUser.id,
-        candidateId,
-      })
-
-      onUserUpdate((previousUser) => ({
-        ...previousUser,
-        hasManagerVoted: true,
-        votedManagerId: candidateId,
-      }))
-      setManagerFeedback(`Fund manager vote submitted for ${result.candidateName}.`)
-    } catch (error) {
-      setManagerFeedback(
-        error instanceof Error ? error.message : 'Unable to submit the fund manager vote.',
-      )
-    } finally {
-      setIsSubmittingManagerVote(false)
-    }
-  }
-
   async function submitRole(role) {
     if (!currentUser || isSubmittingRole) {
       return
@@ -186,19 +67,6 @@ export function SetupPhase({ currentUser, onUserUpdate }) {
     }
   }
 
-  function handleManagerVote(candidate) {
-    if (!currentUser || currentUser.hasManagerVoted || isSubmittingManagerVote || isManagerVoteClosed) {
-      return
-    }
-
-    if (candidate.id === currentUser.id) {
-      setDialog({ type: 'self-manager' })
-      return
-    }
-
-    setDialog({ type: 'manager-vote', candidate })
-  }
-
   function handleRoleSelect(roleName, remainingSlots) {
     if (!currentUser || isSubmittingRole || remainingSlots <= 0) {
       return
@@ -213,14 +81,10 @@ export function SetupPhase({ currentUser, onUserUpdate }) {
     <PhasePanel
       phaseId="setup"
       title="Setup Phase"
-      intro="Confirm the winning project lane, vote for the fund manager, lock team roles, and keep the class roster visible in one responsive space."
+      intro="Confirm the winning project lane, lock team roles, and keep the class roster visible in one responsive space."
       meta={pageMeta}
     >
       <div className="phase-toolbar">
-        <div className="phase-toolbar__pill">{managerVoteStatus}</div>
-        <div className="phase-toolbar__pill">
-          {currentUser?.hasManagerVoted ? 'Manager vote: locked' : 'Manager vote: ready'}
-        </div>
         <div className="phase-toolbar__pill">
           {currentUser?.role ? `Role: ${currentUser.role}` : 'Role: unassigned'}
         </div>
@@ -271,88 +135,10 @@ export function SetupPhase({ currentUser, onUserUpdate }) {
         <section className="setup-card">
           <div className="setup-section__header">
             <div>
-              <p className="eyebrow">Fund Manager Selection</p>
-              <h3>Fund Manager</h3>
-            </div>
-          </div>
-
-          <div className="setup-countdown">
-            <span className="setup-countdown__label">Manager selection countdown</span>
-            <strong>{managerVoteStatus}</strong>
-          </div>
-
-          {managerFeedback ? <p className="phase-feedback">{managerFeedback}</p> : null}
-
-          {currentUser?.canManageProjects ? (
-            <div className="setup-result">
-              <span className="setup-result__label">Admin result panel</span>
-              <strong>
-                {managerWinner?.name || liveManagerLeader?.name || setupMeta.managerWinnerName || 'No votes yet'}
-              </strong>
-              <p>
-                {isManagerVoteClosed
-                  ? 'Final winner is locked in after the vote closed.'
-                  : `Live leader with ${liveManagerLeader?.managerVoteCount ?? 0} vote${(liveManagerLeader?.managerVoteCount ?? 0) === 1 ? '' : 's'}.`}
-              </p>
-            </div>
-          ) : (
-            <div className="setup-result setup-result--muted">
-              <span className="setup-result__label">Result access</span>
-              <strong>Admin only</strong>
-              <p>Members only see candidate names and can cast one manager vote.</p>
-            </div>
-          )}
-
-          {isLoadingMembers ? (
-            <div className="placeholder-block">
-              <p>Loading members for fund manager voting...</p>
-            </div>
-          ) : (
-            <div className="setup-compact-grid">
-              {managerCandidates.map((member) => (
-                <article key={member.id} className="setup-member-card">
-                  <div className="setup-member-card__top">
-                    <div>
-                      <h4>{member.name || 'Unnamed member'}</h4>
-                      <p>{member.rollNumber || 'No roll number found'}</p>
-                    </div>
-                  </div>
-                  {currentUser?.canManageProjects ? (
-                    <div className="setup-member-card__meta">
-                      <span className="setup-tag">Votes {member.managerVoteCount}</span>
-                      {liveManagerLeader?.id === member.id ? (
-                        <span className="setup-tag setup-tag--accent">Current winner</span>
-                      ) : null}
-                      {managerWinner?.id === member.id && isManagerVoteClosed ? (
-                        <span className="setup-tag setup-tag--accent">Final winner</span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="vote-card__button"
-                    disabled={
-                      currentUser?.hasManagerVoted ||
-                      isSubmittingManagerVote ||
-                      isManagerVoteClosed
-                    }
-                    onClick={() => handleManagerVote(member)}
-                  >
-                    Vote
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="setup-card">
-          <div className="setup-section__header">
-            <div>
               <p className="eyebrow">Role Selection</p>
               <h3>Role Selection</h3>
             </div>
-            <p>Leadership and manager titles are separate from the actual working role.</p>
+            <p>Leadership titles are separate from the actual working role.</p>
           </div>
 
           {roleFeedback ? <p className="phase-feedback">{roleFeedback}</p> : null}
@@ -408,7 +194,6 @@ export function SetupPhase({ currentUser, onUserUpdate }) {
                   </div>
                   <div className="setup-roster__badges">
                     {member.isLeader ? <span className="setup-tag setup-tag--leader">Leader</span> : null}
-                    {member.isManager ? <span className="setup-tag setup-tag--accent">Manager</span> : null}
                     <span className="setup-tag">{member.role || 'Role pending'}</span>
                   </div>
                 </article>
@@ -420,32 +205,15 @@ export function SetupPhase({ currentUser, onUserUpdate }) {
 
       <CenterDialog
         open={Boolean(dialog)}
-        title={
-          dialog?.type === 'self-manager'
-            ? 'Cannot vote'
-            : dialog?.type === 'manager-vote'
-              ? 'Confirm fund manager vote'
-              : 'Confirm role selection'
-        }
+        title="Confirm role selection"
         message={
-          dialog?.type === 'self-manager'
-            ? 'You cannot vote yourself.'
-            : dialog?.type === 'manager-vote'
-              ? `Confirm ${dialog.candidate?.name || 'this member'} as the fund manager? This vote cannot be changed.`
-              : `Choose ${dialog?.roleName || 'this role'} for Setup? This role selection will be saved to the database.`
+          `Choose ${dialog?.roleName || 'this role'} for Setup? This role selection will be saved to the database.`
         }
-        showCancel={dialog?.type === 'manager-vote' || dialog?.type === 'role-select'}
+        showCancel={dialog?.type === 'role-select'}
         confirmLabel="Confirm"
         cancelLabel="Cancel"
         onClose={() => setDialog(null)}
         onConfirm={async () => {
-          if (dialog?.type === 'manager-vote' && dialog.candidate?.id) {
-            const candidateId = dialog.candidate.id
-            setDialog(null)
-            await submitManagerVote(candidateId)
-            return
-          }
-
           if (dialog?.type === 'role-select' && dialog.roleName) {
             const roleName = dialog.roleName
             setDialog(null)

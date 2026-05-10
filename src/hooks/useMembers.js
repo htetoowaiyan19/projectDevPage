@@ -4,9 +4,6 @@ import { DEFAULT_ROLE_SLOTS } from '../utils/setupPhase'
 
 const EMPTY_META = {
   roleSlots: { ...DEFAULT_ROLE_SLOTS },
-  managerWinnerId: '',
-  managerWinnerName: '',
-  isManagerVoteFinalized: false,
 }
 
 export function useMembers() {

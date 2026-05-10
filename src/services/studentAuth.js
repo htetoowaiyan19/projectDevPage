@@ -41,11 +41,8 @@ export async function fetchStudentByRollNumber(value) {
     hasProject: Boolean(data.HasProject),
     submittedProjectId: data.SubmittedProjectId ?? '',
     hasVoted: Boolean(data.HasVoted),
-    hasManagerVoted: Boolean(data.HasManagerVoted),
-    votedManagerId: data.VotedManagerId ?? '',
     votePoint: Number(data.VotePoint ?? 1),
     isLeader: Boolean(data.IsLeader),
-    isManager: Boolean(data.IsManager),
     role: data.Role ?? '',
     rollNumber: data.RollNumber ?? rollNumber,
   }
